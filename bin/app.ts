@@ -98,12 +98,12 @@ class PipelineStack extends cdk.Stack {
     });
 
     // Create pipeline
-    // const buildLogGroup = new logs.LogGroup(this, "BuildLogGroup", {
-    //   logGroupName: `/aws/codebuild/${this.stackName}-BuildLogGroup`,
-    //   retention: Infinity,
-    //   removalPolicy: cdk.RemovalPolicy.DESTROY,
-    // });
-    const synthStep = new pipelines.ShellStep("Synth", {
+    const buildLogGroup = new logs.LogGroup(this, "BuildLogGroup", {
+      logGroupName: `/aws/codebuild/${this.stackName}-BuildLogGroup`,
+      retention: Infinity,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
+    const synthStep = new pipelines.ShellStep("Build", {
       input: source,
       commands: ["npm ci", "npm run build", "npx cdk synth"],
     });
@@ -114,7 +114,7 @@ class PipelineStack extends cdk.Stack {
       selfMutation: false,
       useChangeSets: false,
       codeBuildDefaults: {
-        // logging: { cloudWatch: { logGroup: buildLogGroup } },
+        logging: { cloudWatch: { logGroup: buildLogGroup } },
         buildEnvironment: {
           computeType: codebuild.ComputeType.SMALL,
           buildImage: codebuild.LinuxArmBuildImage.AMAZON_LINUX_2_STANDARD_3_0,
