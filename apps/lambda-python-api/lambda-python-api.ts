@@ -10,25 +10,6 @@ class AppStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    // Create Lambda layer
-    const lambdaLayer = new lambda.LayerVersion(this, "LambdaLayer", {
-      layerVersionName: `${this.stackName}-LambdaLayer`,
-      description: `${this.stackName} Lambda layer`,
-      compatibleArchitectures: [lambda.Architecture.ARM_64],
-      compatibleRuntimes: [lambda.Runtime.PYTHON_3_12],
-      code: lambda.Code.fromAsset("layer", {
-        bundling: {
-          image: lambda.Runtime.PYTHON_3_12.bundlingImage,
-          command: [
-            "/bin/sh",
-            "-c",
-            "cp -au . /asset-output && pip install -r python/requirements.txt -t /asset-output/python",
-          ],
-        },
-      }),
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
-    });
-
     // Create Lambda function
     const lambdaLogGroup = new logs.LogGroup(this, "LambdaLogGroup", {
       logGroupName: `/aws/lambda/${this.stackName}-LambdaLogGroup`,
@@ -44,8 +25,16 @@ class AppStack extends cdk.Stack {
       timeout: cdk.Duration.seconds(28),
       logGroup: lambdaLogGroup,
       environment: { key: "value" },
-      code: lambda.Code.fromAsset("src"),
-      layers: [lambdaLayer],
+      code: lambda.Code.fromAsset("src", {
+        bundling: {
+          image: lambda.Runtime.PYTHON_3_12.bundlingImage,
+          command: [
+            "/bin/sh",
+            "-c",
+            "pip install -r requirements.txt -t /asset-output && cp -au . /asset-output",
+          ],
+        },
+      }),
     });
 
     // Create Rest API
@@ -69,4 +58,4 @@ class AppStack extends cdk.Stack {
 }
 
 const app = new cdk.App();
-new AppStack(app, "AppStack", { stackName: "lambda-python-layer" });
+new AppStack(app, "AppStack", { stackName: "lambda-python-api" });
