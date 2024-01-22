@@ -1,11 +1,11 @@
-#!/usr/bin/env node
+// lambda-ts-api.ts
 import "source-map-support/register";
 import * as cdk from "aws-cdk-lib";
 import * as apigateway from "aws-cdk-lib/aws-apigateway";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as nodejs from "aws-cdk-lib/aws-lambda-nodejs";
 import * as logs from "aws-cdk-lib/aws-logs";
-import type { Construct } from "constructs";
+import { Construct } from "constructs";
 
 class AppStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
