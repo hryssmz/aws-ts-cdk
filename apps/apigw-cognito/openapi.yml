@@ -1,0 +1,113 @@
+openapi: "3.1.0"
+info:
+  title: My REST API
+  version: "1.0"
+servers:
+  - url: https://{restApiId}.execute-api.{region}.amazonaws.com/{basePath}
+    variables:
+      restApiId:
+        default: example123
+      region:
+        default: ap-northeast-1
+      basePath:
+        default: dev
+paths:
+  /access:
+    get:
+      operationId: GetAuthAccess
+      tags:
+        - GetAuthAccess
+      responses:
+        "200":
+          description: 200 OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetAuthAccessResponse"
+              examples:
+                example1:
+                  value:
+                    origin_jti: 792116d6-02b9-4021-83f9-e5e14f3eb4c8
+                    sub: b771dac0-aa13-4207-a8e2-3bf2326ba8db
+                    event_id: 41b4d820-5656-4bb4-b6a9-a9af94dd6872
+                    token_use: access
+                    scope: aws.cognito.signin.user.admin
+                    auth_time: "1694790140"
+                    iss: https://cognito-idp.ap-northeast-1.amazonaws.com/ap-northeast-1_WL4lJfCBP
+                    exp: Fri Sep 15 16:02:20 UTC 2023
+                    iat: Fri Sep 15 15:02:20 UTC 2023
+                    client_id: 1atr7b11nk6q2m1qhnfbs8086i
+                    jti: 01453155-c34d-4221-82d2-623f5c4ee76d
+                    username: hryssmz
+          headers:
+            Access-Control-Allow-Origin:
+              description: Response header for CORS support
+              schema:
+                type: string
+      security:
+        - CognitoAuthorizer:
+            - aws.cognito.signin.user.admin
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        uri:
+          Fn::Sub: arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetAuthAccessFunction.Arn}/invocations
+        httpMethod: POST
+  /id:
+    get:
+      operationId: GetAuthId
+      tags:
+        - GetAuthId
+      responses:
+        "200":
+          description: 200 OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetAuthIdResponse"
+              examples:
+                example1:
+                  value:
+                    sub: b771dac0-aa13-4207-a8e2-3bf2326ba8db
+                    email_verified: "true"
+                    iss: https://cognito-idp.ap-northeast-1.amazonaws.com/ap-northeast-1_WL4lJfCBP
+                    cognito:username: hryssmz
+                    origin_jti: 792116d6-02b9-4021-83f9-e5e14f3eb4c8
+                    aud: 1atr7b11nk6q2m1qhnfbs8086i
+                    event_id: 41b4d820-5656-4bb4-b6a9-a9af94dd6872
+                    token_use: id
+                    auth_time: "1694790140"
+                    exp: Fri Sep 15 16:02:20 UTC 2023
+                    iat: Fri Sep 15 15:02:20 UTC 2023
+                    jti: "08d67f1e-75ff-4452-a6d3-2e8c46a83ff1"
+                    email: hryssmz@yahoo.com
+          headers:
+            Access-Control-Allow-Origin:
+              description: Response header for CORS support
+              schema:
+                type: string
+      security:
+        - CognitoAuthorizer: []
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        uri:
+          Fn::Sub: arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetAuthIdFunction.Arn}/invocations
+        httpMethod: POST
+components:
+  securitySchemes:
+    CognitoAuthorizer:
+      type: apiKey
+      name: Authorization
+      in: header
+      x-amazon-apigateway-authtype: cognito_user_pools
+      x-amazon-apigateway-authorizer:
+        type: cognito_user_pools
+        providerARNs:
+          - Fn::GetAtt: UserPool.Arn
+  schemas:
+    GetAuthAccessResponse:
+      description: Response body for GET /access
+      type: object
+    GetAuthIdResponse:
+      description: Response body for GET /id
+      type: object
+

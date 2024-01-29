@@ -11,13 +11,13 @@ import { Construct } from "constructs";
 class Route53DNSProvider extends Construct {
   public readonly serviceToken: string;
 
-  constructor(scope: Construct, id: string) {
+  private constructor(scope: Construct, id: string) {
     super(scope, id);
     const stack = cdk.Stack.of(scope);
 
     // Create Lambda function
     const onEventLogGroup = new logs.LogGroup(this, "OnEventLogGroup", {
-      logGroupName: `/aws/lambda/${stack.stackName}-Route53DNSOnEventLogGroup`,
+      logGroupName: `/aws/lambda/${stack.stackName}-Route53DNSOnEventFunction`,
       retention: Infinity,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
@@ -64,10 +64,16 @@ class Route53DNSProvider extends Construct {
     );
 
     // Create provider
+    const providerLogGroup = new logs.LogGroup(this, "ProviderLogGroup", {
+      logGroupName: `/aws/lambda/${stack.stackName}-Route53DNSProviderFunction`,
+      retention: Infinity,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
     const provider = new cr.Provider(this, "Provider", {
       onEventHandler: onEvent,
       providerFunctionName: `${stack.stackName}-Route53DNSProviderFunction`,
     });
+    provider.node.addDependency(providerLogGroup);
     this.serviceToken = provider.serviceToken;
   }
 
@@ -110,6 +116,14 @@ class AppStack extends cdk.Stack {
     const hostedZone = new route53.PublicHostedZone(this, "HostedZone", {
       zoneName: "hryssmz.click",
       comment: "My public hosted zone",
+    });
+    new cdk.CfnOutput(this, "HostedZoneId", {
+      description: "Hosted zone ID",
+      value: hostedZone.hostedZoneId,
+    });
+    new cdk.CfnOutput(this, "HostedZoneName", {
+      description: "Hosted zone name",
+      value: hostedZone.zoneName,
     });
     new cdk.CfnOutput(this, "HostedZoneNameServers", {
       description: "Hosted zone name servers",

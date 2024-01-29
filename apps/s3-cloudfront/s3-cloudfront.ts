@@ -26,8 +26,11 @@ class AppStack extends cdk.Stack {
 
     // Create CloudFront destribution
     const distribution = new cloudfront.Distribution(this, "Distribution", {
+      comment: "CloudFront distribution",
       defaultBehavior: {
         origin: new origins.S3Origin(bucket),
+        allowedMethods: cloudfront.AllowedMethods.ALLOW_GET_HEAD,
+        cachedMethods: cloudfront.CachedMethods.CACHE_GET_HEAD,
       },
       defaultRootObject: "index.html",
     });

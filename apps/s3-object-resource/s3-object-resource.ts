@@ -3,7 +3,6 @@ import "source-map-support/register";
 import * as cdk from "aws-cdk-lib";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as lambda from "aws-cdk-lib/aws-lambda";
-import * as nodejs from "aws-cdk-lib/aws-lambda-nodejs";
 import * as logs from "aws-cdk-lib/aws-logs";
 import * as s3 from "aws-cdk-lib/aws-s3";
 import * as cr from "aws-cdk-lib/custom-resources";
@@ -12,25 +11,56 @@ import { Construct } from "constructs";
 class S3ObjectProvider extends Construct {
   public readonly serviceToken: string;
 
-  constructor(scope: Construct, id: string) {
+  private constructor(scope: Construct, id: string) {
     super(scope, id);
     const stack = cdk.Stack.of(scope);
 
     // Create Lambda function
     const onEventLogGroup = new logs.LogGroup(this, "OnEventLogGroup", {
-      logGroupName: `/aws/lambda/${stack.stackName}-S3ObjectOnEventLogGroup`,
+      logGroupName: `/aws/lambda/${stack.stackName}-S3ObjectOnEventFunction`,
       retention: Infinity,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
-    const onEvent = new nodejs.NodejsFunction(this, "OnEvent", {
+    const onEvent = new lambda.Function(this, "OnEvent", {
       functionName: `${stack.stackName}-S3ObjectOnEventFunction`,
       description: `${stack.stackName} S3Object onEvent function`,
-      handler: "handler",
+      handler: "index.handler",
       runtime: lambda.Runtime.NODEJS_20_X,
       architecture: lambda.Architecture.ARM_64,
       timeout: cdk.Duration.minutes(14),
       logGroup: onEventLogGroup,
-      entry: "src/on-event.ts",
+      code: lambda.Code.fromInline(`
+        const {
+          DeleteObjectCommand,
+          PutObjectCommand,
+          S3Client,
+        } = require("@aws-sdk/client-s3");
+        
+        exports.handler = async event => {
+          console.log(JSON.stringify(event, null, 2));
+          const client = new S3Client();
+          const { ResourceProperties } = event;
+          const { Bucket, Key, Body, ContentType, Base64 } = ResourceProperties;
+          if (event.RequestType === "Create" || event.RequestType === "Update") {
+            const command = new PutObjectCommand({
+              Bucket,
+              Key,
+              // Base64 is a string, not a boolean
+              Body: Base64 === "true" ? Buffer.from(Body, "base64") : Body,
+              ContentType,
+            });
+            await client.send(command);
+            return {
+              PhysicalResourceId: "s3://" + Bucket + "/" + Key,
+              Data: { Bucket, Key },
+            };
+          } else {
+            const command = new DeleteObjectCommand({ Bucket, Key });
+            await client.send(command);
+            return {};
+          }
+        };
+      `),
     });
     onEvent.addToRolePolicy(
       new iam.PolicyStatement({
