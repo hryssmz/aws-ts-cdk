@@ -25,12 +25,34 @@ class AppStack extends cdk.Stack {
     });
 
     // Create CloudFront destribution
+    const cloudfrontFunction = new cloudfront.Function(
+      this,
+      "CloudFrontFunction",
+      {
+        comment: "CloudFront function",
+        functionName: `${this.stackName}-CloudFrontFunction`,
+        runtime: cloudfront.FunctionRuntime.JS_2_0,
+        code: cloudfront.FunctionCode.fromInline(`
+          async function handler(event) {
+            const request = event.request;
+            request.uri = "/index.html";
+            return request;
+          }
+        `),
+      }
+    );
     const distribution = new cloudfront.Distribution(this, "Distribution", {
       comment: "CloudFront distribution",
       defaultBehavior: {
         origin: new origins.S3Origin(bucket),
         allowedMethods: cloudfront.AllowedMethods.ALLOW_GET_HEAD,
         cachedMethods: cloudfront.CachedMethods.CACHE_GET_HEAD,
+        functionAssociations: [
+          {
+            function: cloudfrontFunction,
+            eventType: cloudfront.FunctionEventType.VIEWER_REQUEST,
+          },
+        ],
       },
       defaultRootObject: "index.html",
     });
