@@ -21,7 +21,7 @@ class AppStack extends cdk.Stack {
     // Create VPC
     const vpc = new ec2.Vpc(this, "VPC", {
       ipAddresses: ec2.IpAddresses.cidr("172.20.0.0/16"),
-      restrictDefaultSecurityGroup: true,
+      restrictDefaultSecurityGroup: false,
       maxAzs: 1,
       reservedAzs: 1,
       natGateways: 0,
@@ -120,6 +120,9 @@ class AppStack extends cdk.Stack {
       enableECSManagedTags: true,
       enableExecuteCommand: true,
       desiredCount: 1,
+      vpcSubnets: {
+        subnetType: ec2.SubnetType.PUBLIC,
+      },
     });
 
     // Create NLB

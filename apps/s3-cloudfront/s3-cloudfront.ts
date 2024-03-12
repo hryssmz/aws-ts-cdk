@@ -24,7 +24,7 @@ class AppStack extends cdk.Stack {
       destinationKeyPrefix: "",
     });
 
-    // Create CloudFront destribution
+    // Create CloudFront distribution
     const cloudfrontFunction = new cloudfront.Function(
       this,
       "CloudFrontFunction",

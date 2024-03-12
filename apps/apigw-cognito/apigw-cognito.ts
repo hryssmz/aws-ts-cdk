@@ -101,7 +101,7 @@ class AppStack extends cdk.Stack {
       code: lambda.Code.fromInline(`
         const crypto = require("node:crypto");
         const https = require("node:https");
-        
+
         exports.handler = async event => {
           const { username, password, email, phoneNumber } = event;
           const clientId = process.env.CLIENT_ID;
@@ -145,7 +145,7 @@ class AppStack extends cdk.Stack {
             req.write(JSON.stringify(reqBody, null, 2));
             req.end();
           });
-        
+
           return response;
         };
       `),
@@ -176,7 +176,7 @@ class AppStack extends cdk.Stack {
       code: lambda.Code.fromInline(`
         const crypto = require("node:crypto");
         const https = require("node:https");
-        
+
         exports.handler = async event => {
           const { username, code } = event;
           const clientId = process.env.CLIENT_ID;
@@ -212,7 +212,7 @@ class AppStack extends cdk.Stack {
             req.write(JSON.stringify(reqBody, null, 2));
             req.end();
           });
-        
+
           return response;
         };
       `),
@@ -239,7 +239,7 @@ class AppStack extends cdk.Stack {
       code: lambda.Code.fromInline(`
         const crypto = require("node:crypto");
         const https = require("node:https");
-        
+
         exports.handler = async event => {
           const { username, password } = event;
           const clientId = process.env.CLIENT_ID;
@@ -278,20 +278,20 @@ class AppStack extends cdk.Stack {
             req.write(JSON.stringify(reqBody, null, 2));
             req.end();
           });
-        
+
           const accessToken = AuthenticationResult?.AccessToken;
           const idToken = AuthenticationResult?.IdToken;
-        
+
           if (accessToken !== undefined) {
             const payload = Buffer.from(accessToken.split(".")[1], "base64").toString();
             console.log(JSON.stringify(JSON.parse(payload), null, 2));
           }
-        
+
           if (idToken !== undefined) {
             const payload = Buffer.from(idToken.split(".")[1], "base64").toString();
             console.log(JSON.stringify(JSON.parse(payload), null, 2));
           }
-        
+
           return AuthenticationResult;
         };
       `),
@@ -323,7 +323,7 @@ class AppStack extends cdk.Stack {
           AdminRespondToAuthChallengeCommand,
           CognitoIdentityProviderClient,
         } = require("@aws-sdk/client-cognito-identity-provider");
-        
+
         exports.handler = async event => {
           const { username, password, email, phoneNumber } = event;
           const userPoolId = process.env.USER_POOL_ID;
@@ -341,7 +341,7 @@ class AppStack extends cdk.Stack {
             );
             desiredDeliveryMediums.push("SMS");
           }
-        
+
           const adminCreateUserCommand = new AdminCreateUserCommand({
             UserPoolId: userPoolId,
             Username: username,
@@ -350,7 +350,7 @@ class AppStack extends cdk.Stack {
             DesiredDeliveryMediums: desiredDeliveryMediums,
           });
           await client.send(adminCreateUserCommand);
-        
+
           const clientSecret = process.env.CLIENT_SECRET;
           const secretHash = crypto
             .createHmac("sha256", clientSecret)
@@ -369,7 +369,7 @@ class AppStack extends cdk.Stack {
           const { Session, ChallengeName } = await client.send(
             adminInitiateAuthCommand
           );
-        
+
           const adminRespondToAuthChallengeCommand =
             new AdminRespondToAuthChallengeCommand({
               UserPoolId: userPoolId,
@@ -385,20 +385,20 @@ class AppStack extends cdk.Stack {
           const { AuthenticationResult } = await client.send(
             adminRespondToAuthChallengeCommand
           );
-        
+
           const accessToken = AuthenticationResult?.AccessToken;
           const idToken = AuthenticationResult?.IdToken;
-        
+
           if (accessToken !== undefined) {
             const payload = Buffer.from(accessToken.split(".")[1], "base64").toString();
             console.log(JSON.stringify(JSON.parse(payload), null, 2));
           }
-        
+
           if (idToken !== undefined) {
             const payload = Buffer.from(idToken.split(".")[1], "base64").toString();
             console.log(JSON.stringify(JSON.parse(payload), null, 2));
           }
-        
+
           return AuthenticationResult;
         };
       `),
@@ -586,7 +586,7 @@ class AppStack extends cdk.Stack {
           CognitoIdentityProviderClient,
           InitiateAuthCommand,
         } = require("@aws-sdk/client-cognito-identity-provider");
-        
+
         exports.handler = async event => {
           const { username, password } = event;
           const idToken = await getIdToken(username, password);
@@ -612,7 +612,7 @@ class AppStack extends cdk.Stack {
           });
           return resBody;
         };
-        
+
         const getIdToken = async (username, password) => {
           const clientId = process.env.CLIENT_ID;
           const clientSecret = process.env.CLIENT_SECRET;
@@ -621,7 +621,7 @@ class AppStack extends cdk.Stack {
             .update(username + clientId)
             .digest("base64");
           const client = new CognitoIdentityProviderClient();
-        
+
           const initiateAuthCommand = new InitiateAuthCommand({
             ClientId: clientId,
             AuthFlow: "USER_PASSWORD_AUTH",

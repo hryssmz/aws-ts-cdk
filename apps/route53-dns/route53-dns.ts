@@ -34,7 +34,7 @@ class Route53DNSProvider extends Construct {
           Route53DomainsClient,
           UpdateDomainNameserversCommand,
         } = require("@aws-sdk/client-route-53-domains");
-        
+
         exports.handler = async event => {
           console.log(JSON.stringify(event, null, 2));
           const client = new Route53DomainsClient({ region: "us-east-1" });

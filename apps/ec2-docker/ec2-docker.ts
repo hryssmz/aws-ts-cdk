@@ -25,7 +25,7 @@ class AppStack extends cdk.Stack {
     // Create VPC
     const vpc = new ec2.Vpc(this, "VPC", {
       ipAddresses: ec2.IpAddresses.cidr("172.20.0.0/16"),
-      restrictDefaultSecurityGroup: true,
+      restrictDefaultSecurityGroup: false,
       maxAzs: 1,
       reservedAzs: 1,
       natGateways: 0,
@@ -109,11 +109,11 @@ class AppStack extends cdk.Stack {
           ports:
             - ${dbport}:${dbport}
           restart: always
-      
+
       networks:
         postgres:
           name: postgres
-      
+
       volumes:
         postgres:
           name: postgres
@@ -137,6 +137,9 @@ class AppStack extends cdk.Stack {
         ec2.InstanceSize.MICRO
       ),
       vpc,
+      vpcSubnets: {
+        subnetType: ec2.SubnetType.PUBLIC,
+      },
       ssmSessionPermissions: true,
       init: ec2.CloudFormationInit.fromConfigSets({
         configSets: {

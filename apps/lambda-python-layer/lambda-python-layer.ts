@@ -14,18 +14,9 @@ class AppStack extends cdk.Stack {
     const lambdaLayer = new lambda.LayerVersion(this, "LambdaLayer", {
       layerVersionName: `${this.stackName}-LambdaLayer`,
       description: `${this.stackName} Lambda layer`,
-      compatibleArchitectures: [lambda.Architecture.ARM_64],
+      compatibleArchitectures: [lambda.Architecture.X86_64],
       compatibleRuntimes: [lambda.Runtime.PYTHON_3_12],
-      code: lambda.Code.fromAsset("layer", {
-        bundling: {
-          image: lambda.Runtime.PYTHON_3_12.bundlingImage,
-          command: [
-            "/bin/sh",
-            "-c",
-            "cp -au . /asset-output && pip install -r python/requirements.txt -t /asset-output/python",
-          ],
-        },
-      }),
+      code: lambda.Code.fromAsset("layer.zip"),
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
@@ -40,7 +31,7 @@ class AppStack extends cdk.Stack {
       description: `${this.stackName} Lambda function`,
       handler: "index.handler",
       runtime: lambda.Runtime.PYTHON_3_12,
-      architecture: lambda.Architecture.ARM_64,
+      architecture: lambda.Architecture.X86_64,
       timeout: cdk.Duration.seconds(28),
       logGroup: lambdaLogGroup,
       environment: { key: "value" },

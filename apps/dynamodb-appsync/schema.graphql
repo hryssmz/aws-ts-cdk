@@ -1,0 +1,16 @@
+type Demo {
+  id: String!
+  version: String!
+}
+
+type Query {
+  getDemos: [Demo!]
+}
+
+input DemoInput {
+  version: String!
+}
+
+type Mutation {
+  addDemo(input: DemoInput!): Demo
+}

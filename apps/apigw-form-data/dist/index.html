@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/logo.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <div>
+      <form action="/api/upload" method="post" enctype="multipart/form-data">
+        <div>
+          <label>
+            File:
+            <input type="file" name="file" />
+          </label>
+        </div>
+        <div>
+          <label>
+            Key:
+            <input type="text" name="key" />
+          </label>
+        </div>
+        <div>
+          <button type="submit">Submit</button>
+          <button type="button" id="greet-button">Greet</button>
+        </div>
+      </form>
+    </div>
+    <script>
+      const button = document.getElementById("greet-button");
+      button.addEventListener("click", () => {
+        fetch("/api/hello")
+          .then(res => {
+            if (!res.ok) {
+              throw res;
+            }
+            return res.json();
+          })
+          .then(data => {
+            alert(JSON.stringify(data, null, 2));
+          })
+          .catch(error => {
+            console.error(error);
+          });
+      });
+    </script>
+  </body>
+</html>

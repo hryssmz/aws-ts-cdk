@@ -35,7 +35,7 @@ class S3ObjectProvider extends Construct {
           PutObjectCommand,
           S3Client,
         } = require("@aws-sdk/client-s3");
-        
+
         exports.handler = async event => {
           console.log(JSON.stringify(event, null, 2));
           const client = new S3Client();
