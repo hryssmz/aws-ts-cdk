@@ -4,12 +4,11 @@ import type { CreateAuthChallengeTriggerEvent } from "aws-lambda";
 export const handler = async (event: CreateAuthChallengeTriggerEvent) => {
   console.log(JSON.stringify(event, null, 2));
   const { request, response } = event;
-  const { session, userAttributes } = request;
-  const challengeStep = session.length === 2 ? 2 : -1;
+  const { userAttributes } = request;
 
-  if (challengeStep === 2) {
+  if (userAttributes["custom:mfa"] === "EMAIL") {
     response.publicChallengeParameters = { type: "EMAIL" };
-    const verificationCode = "0";
+    const answer = "0";
     const senderEmail = process.env.SENDER_EMAIL;
     const recipientEmail = userAttributes.email;
     const client = new SESClient();
@@ -17,18 +16,12 @@ export const handler = async (event: CreateAuthChallengeTriggerEvent) => {
       Source: senderEmail,
       Destination: { ToAddresses: [recipientEmail] },
       Message: {
-        Subject: {
-          Data: "Email sign in verification",
-        },
-        Body: {
-          Text: {
-            Data: `Your verification code is ${verificationCode}`,
-          },
-        },
+        Subject: { Data: "Email sign in verification" },
+        Body: { Text: { Data: `Your verification code is ${answer}` } },
       },
     });
     await client.send(command);
-    response.privateChallengeParameters = { answer: verificationCode };
+    response.privateChallengeParameters = { answer };
   }
   return event;
 };

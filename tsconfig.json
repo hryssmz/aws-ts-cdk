@@ -20,5 +20,5 @@
     "typeRoots": ["./node_modules/@types"],
     "esModuleInterop": true
   },
-  "exclude": ["node_modules", "cdk.out"]
+  "exclude": ["node_modules", "cdk.out", "apps/custom-auth-mfa/react"]
 }

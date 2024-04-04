@@ -5,12 +5,19 @@ const mfaHandler = async (event: DefineAuthChallengeTriggerEvent) => {
   const { userAttributes } = request;
   const mfa = userAttributes["custom:mfa"];
   if (mfa === "SMS") {
+    console.log("SMS_MFA");
     response.challengeName = "SMS_MFA";
   } else if (mfa === "TOTP") {
+    console.log("SOFTWARE_TOKEN_MFA");
     response.challengeName = "SOFTWARE_TOKEN_MFA";
   } else if (mfa === "EMAIL") {
+    console.log("CUSTOM_CHALLENGE");
     response.challengeName = "CUSTOM_CHALLENGE";
+  } else if (!mfa || mfa === "OFF") {
+    console.log("DONE");
+    response.issueTokens = true;
   } else {
+    console.log("FAILED");
     response.failAuthentication = true;
   }
   return event;
@@ -20,27 +27,23 @@ export const handler = async (event: DefineAuthChallengeTriggerEvent) => {
   console.log(JSON.stringify(event, null, 2));
   const { request, response } = event;
   const { session } = request;
+  const { challengeName, challengeResult } = session[session.length - 1];
   response.issueTokens = false;
   response.failAuthentication = false;
 
-  const challengeStep =
-    session.length === 1 && session[0].challengeName === "SRP_A"
-      ? 1
-      : session.length === 2 &&
-        session[1].challengeName === "PASSWORD_VERIFIER" &&
-        session[1].challengeResult === true
-      ? 2
-      : session.length === 3
-      ? 3
-      : -1;
-
-  if (challengeStep === 1) {
+  if (challengeName === "SRP_A") {
+    console.log("PASSWORD_VERIFIER");
     response.challengeName = "PASSWORD_VERIFIER";
-  } else if (challengeStep === 2) {
-    return mfaHandler(event);
-  } else if (challengeStep === 3) {
-    response.issueTokens = true;
+  } else if (challengeResult === true) {
+    const challenges = ["SMS_MFA", "SOFTWARE_TOKEN_MFA", "CUSTOM_CHALLENGE"];
+    if (challenges.indexOf(session[session.length - 1].challengeName) >= 0) {
+      console.log("DONE");
+      response.issueTokens = true;
+    } else {
+      return mfaHandler(event);
+    }
   } else {
+    console.log("FAILED");
     response.failAuthentication = true;
   }
   return event;

@@ -1,106 +1,138 @@
+import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { confirmSignIn } from "aws-amplify/auth";
+import QRCode from "react-qr-code";
 import { defaultValues, paths } from "../lib";
 import { useDispatch } from "../store";
 import { getCurrentUser } from "../store/auth";
 
-interface LocationState {
-  signInStep:
-    | "CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED"
-    | "CONFIRM_SIGN_IN_WITH_SMS_CODE"
-    | "CONFIRM_SIGN_IN_WITH_TOTP_CODE"
-    | "CONFIRM_SIGN_IN_WITH_CUSTOM_CHALLENGE";
-  additionalInfo?: { type: "EMAIL" };
-}
+type LocationState =
+  | { signInStep: "CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED" }
+  | { signInStep: "CONFIRM_SIGN_IN_WITH_SMS_CODE" }
+  | { signInStep: "CONFIRM_SIGN_IN_WITH_TOTP_CODE" }
+  | { signInStep: "CONTINUE_SIGN_IN_WITH_MFA_SELECTION" }
+  | {
+      signInStep: "CONFIRM_SIGN_IN_WITH_CUSTOM_CHALLENGE";
+      additionalInfo: { type: string };
+    }
+  | { signInStep: "CONTINUE_SIGN_IN_WITH_TOTP_SETUP"; setupUri: string };
 
 export default function ConfirmSignIn() {
+  const [submitting, setSubmitting] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { signInStep, additionalInfo }: LocationState = location.state;
+  const state: LocationState = location.state;
+  const { signInStep } = state;
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    try {
+      setSubmitting(true);
+      const formData = new FormData(event.target as HTMLFormElement);
+      const data = [...formData].reduce((acc, [k, v]) => {
+        return { ...acc, [k]: typeof v === "string" ? v : v.name };
+      }, {} as Record<string, string>);
+      const { answer, mfa, password, smscode, totpcode } = data;
+      const { isSignedIn, nextStep } = await confirmSignIn({
+        challengeResponse:
+          signInStep === "CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED"
+            ? password
+            : signInStep === "CONFIRM_SIGN_IN_WITH_SMS_CODE"
+            ? smscode
+            : signInStep === "CONFIRM_SIGN_IN_WITH_TOTP_CODE" ||
+              signInStep === "CONTINUE_SIGN_IN_WITH_TOTP_SETUP"
+            ? totpcode
+            : signInStep === "CONTINUE_SIGN_IN_WITH_MFA_SELECTION"
+            ? mfa
+            : signInStep === "CONFIRM_SIGN_IN_WITH_CUSTOM_CHALLENGE"
+            ? answer
+            : "",
+      }).catch(error => {
+        alert(error);
+        throw error;
+      });
+      if (isSignedIn) {
+        await dispatch(getCurrentUser()).unwrap();
+        navigate(paths.home);
+      } else {
+        switch (nextStep.signInStep) {
+          case "CONFIRM_SIGN_IN_WITH_SMS_CODE":
+          case "CONFIRM_SIGN_IN_WITH_TOTP_CODE": {
+            navigate(paths.confirmSignin, {
+              state: { signInStep: nextStep.signInStep },
+            });
+            break;
+          }
+          case "CONTINUE_SIGN_IN_WITH_TOTP_SETUP": {
+            const setupUri = nextStep.totpSetupDetails
+              .getSetupUri("testApp")
+              .toString();
+            navigate(paths.confirmSignin, {
+              state: { signInStep: nextStep.signInStep, setupUri },
+            });
+            break;
+          }
+          default: {
+            alert(JSON.stringify(nextStep, null, 2));
+          }
+        }
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   return (
     <div>
       <h2>Confirm Sign In</h2>
-      <form
-        onSubmit={async event => {
-          event.preventDefault();
-          const formData = new FormData(event.target as HTMLFormElement);
-          const data = [...formData].reduce((acc, [k, v]) => {
-            return { ...acc, [k]: typeof v === "string" ? v : v.name };
-          }, {} as Record<string, string>);
-          const { challengeanswer, password, smscode, totpcode } = data;
-          const { isSignedIn, nextStep } = await confirmSignIn({
-            challengeResponse:
-              signInStep === "CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED"
-                ? password
-                : signInStep === "CONFIRM_SIGN_IN_WITH_SMS_CODE"
-                ? smscode
-                : signInStep === "CONFIRM_SIGN_IN_WITH_TOTP_CODE"
-                ? totpcode
-                : signInStep === "CONFIRM_SIGN_IN_WITH_CUSTOM_CHALLENGE"
-                ? challengeanswer
-                : "",
-          }).catch(error => {
-            alert(error);
-            throw error;
-          });
-          if (isSignedIn) {
-            await dispatch(getCurrentUser()).unwrap();
-            navigate(paths.home);
-          } else {
-            alert(JSON.stringify(nextStep, null, 2));
-          }
-        }}
-        autoComplete="off"
-      >
+      <form onSubmit={handleSubmit} autoComplete="off">
         {signInStep === "CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED" ? (
-          <div className="mb-1">
-            <label htmlFor="confirm-signin-password">Password: </label>
+          <label className="mb-1 block">
+            Password:{" "}
             <input
-              id="confirm-signin-password"
               name="password"
               type="text"
               required
               defaultValue={defaultValues.password}
             />
-          </div>
+          </label>
         ) : signInStep === "CONFIRM_SIGN_IN_WITH_SMS_CODE" ? (
-          <div className="mb-1">
-            <label htmlFor="confirm-signin-sms-code">SMS code: </label>
-            <input
-              id="confirm-signin-sms-code"
-              name="smscode"
-              type="text"
-              required
-            />
-          </div>
+          <label className="mb-1 block">
+            SMS code: <input name="smscode" type="text" required />
+          </label>
         ) : signInStep === "CONFIRM_SIGN_IN_WITH_TOTP_CODE" ? (
-          <div className="mb-1">
-            <label htmlFor="confirm-signin-totp-code">TOTP code: </label>
-            <input
-              id="confirm-signin-totp-code"
-              name="totpcode"
-              type="text"
-              required
-            />
-          </div>
-        ) : signInStep === "CONFIRM_SIGN_IN_WITH_CUSTOM_CHALLENGE" &&
-          additionalInfo ? (
-          <div className="mb-1">
-            <label htmlFor="confirm-signin-challenge-answer">
-              {additionalInfo.type === "EMAIL" ? "Verification Code: " : null}
+          <label className="mb-1 block">
+            TOTP code: <input name="totpcode" type="text" required />
+          </label>
+        ) : signInStep === "CONTINUE_SIGN_IN_WITH_MFA_SELECTION" ? (
+          <>
+            <label className="mb-1 block">
+              <input name="mfa" type="radio" value="SMS" required /> SMS
             </label>
-            <input
-              id="confirm-signin-challenge-answer"
-              name="challengeanswer"
-              type="text"
-              required
-            />
-          </div>
+            <label className="mb-1 block">
+              <input name="mfa" type="radio" value="TOTP" required /> TOTP
+            </label>
+          </>
+        ) : signInStep === "CONFIRM_SIGN_IN_WITH_CUSTOM_CHALLENGE" ? (
+          <label className="mb-1 block">
+            {state.additionalInfo.type === "EMAIL"
+              ? "Verification Code: "
+              : "Challenge Answer: "}
+            <input name="answer" type="text" required />
+          </label>
+        ) : signInStep === "CONTINUE_SIGN_IN_WITH_TOTP_SETUP" ? (
+          <>
+            <label className="mb-1 block">
+              TOTP Code: <input name="totpcode" type="text" required />
+            </label>
+            <QRCode className="mb-1 block" value={state.setupUri} size={256} />
+          </>
         ) : null}
         <div>
-          <button type="submit">Submit</button>
+          <button type="submit" disabled={submitting}>
+            {submitting ? "Submitting..." : "Submit"}
+          </button>
         </div>
       </form>
     </div>

@@ -7,26 +7,22 @@ import ConfirmSignIn from "./pages/ConfirmSignIn";
 import ConfirmSignUp from "./pages/ConfirmSignUp";
 import Home from "./pages/Home";
 import Layout from "./pages/Layout";
-import MfaEmail from "./pages/MfaEmail";
-import MfaSms from "./pages/MfaSms";
-import MfaTotp from "./pages/MfaTotp";
 import SignIn from "./pages/SignIn";
 import SignOut from "./pages/SignOut";
 import SignUp from "./pages/SignUp";
+import UpdateMfa from "./pages/UpdateMfa";
 
 const router = createBrowserRouter([
   {
     element: <Layout />,
     children: [
       { path: paths.home, element: <Home /> },
-      { path: paths.signup, element: <SignUp /> },
+      { path: paths.confirmSignin, element: <ConfirmSignIn /> },
       { path: paths.confirmSignup, element: <ConfirmSignUp /> },
       { path: paths.signin, element: <SignIn /> },
+      { path: paths.signup, element: <SignUp /> },
       { path: paths.signout, element: <SignOut /> },
-      { path: paths.confirmSignin, element: <ConfirmSignIn /> },
-      { path: paths.mfaSms, element: <MfaSms /> },
-      { path: paths.mfaTotp, element: <MfaTotp /> },
-      { path: paths.mfaEmail, element: <MfaEmail /> },
+      { path: paths.updateMfa, element: <UpdateMfa /> },
       { path: "*", element: <Navigate to={paths.home} /> },
     ],
   },

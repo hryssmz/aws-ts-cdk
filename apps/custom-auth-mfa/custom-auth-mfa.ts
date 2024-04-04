@@ -163,18 +163,14 @@ class AppStack extends cdk.Stack {
         tempPasswordValidity: cdk.Duration.days(7),
       },
       signInAliases: { username: true },
-      autoVerify: { email: true, phone: true },
-      keepOriginal: { email: true, phone: true },
+      autoVerify: { email: true },
+      keepOriginal: { email: true },
       standardAttributes: {
         email: { required: true, mutable: true },
-        phoneNumber: { required: true, mutable: true },
+        phoneNumber: { required: false, mutable: true },
       },
       customAttributes: {
-        mfa: new cognito.StringAttribute({
-          minLen: 3,
-          maxLen: 5,
-          mutable: true,
-        }),
+        mfa: new cognito.StringAttribute({ mutable: true }),
       },
       accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,
       selfSignUpEnabled: true,
@@ -250,7 +246,7 @@ class AppStack extends cdk.Stack {
         entry: "src/admin-create-user.ts",
       }
     );
-    userPool.grant(adminCreateUserFunction, "cognito-idp:AdminCreateUser");
+    userPool.grant(adminCreateUserFunction, "cognito-idp:Admin*");
 
     // Outputs
     new cdk.CfnOutput(this, "DistributionURL", {

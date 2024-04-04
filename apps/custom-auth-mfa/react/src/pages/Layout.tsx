@@ -21,13 +21,7 @@ export default function Layout() {
         {user ? (
           <>
             <div>
-              <Link to={paths.mfaSms}>MFA SMS</Link>
-            </div>
-            <div>
-              <Link to={paths.mfaTotp}>MFA TOTP</Link>
-            </div>
-            <div>
-              <Link to={paths.mfaEmail}>MFA Email</Link>
+              <Link to={paths.updateMfa}>Update MFA</Link>
             </div>
             <div>
               <Link to={paths.signout}>Sign Out</Link>
