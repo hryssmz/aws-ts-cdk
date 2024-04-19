@@ -150,6 +150,8 @@ class AppStack extends cdk.Stack {
       allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
       cachedMethods: cloudfront.CachedMethods.CACHE_GET_HEAD,
       cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
+      originRequestPolicy:
+        cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
     });
     new cdk.CfnOutput(this, "DistributionURL", {
       description: "Distribution URL",

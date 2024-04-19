@@ -41,6 +41,7 @@ class AppStack extends cdk.Stack {
 
     // Create demo DynamoDB data source
     const demoTable = new dynamodb.Table(this, "DemoTable", {
+      tableName: `${this.stackName}-DemoTable`,
       partitionKey: {
         name: "id",
         type: dynamodb.AttributeType.STRING,
